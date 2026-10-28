@@ -558,6 +558,12 @@ fn (mut encoder Encoder) encode_sumtype[T](val &T) {
 						// an alias such as `type Timestamp = time.Time`.
 						encoder.encode_sumtype_time_variant(time.Time(val), 'Time')
 					}
+				} $else $if variant.typ is JsonEncoder && (variant.typ is StringDecoder || variant.typ is NumberDecoder || variant.typ is BooleanDecoder || variant.typ is NullDecoder) {
+					// A variant that is written by its own `to_json` and decoded from a
+					// scalar, like `big.Integer`, needs no `_type` tag: decoding selects it
+					// by the kind of the JSON value.
+					variant_value := val
+					encoder.encode_value(variant_value)
 				} $else $if variant.typ is $struct {
 					if T.name in ['x.json2.Any', 'json2.Any', 'Any'] {
 						variant_value := val
@@ -601,6 +607,9 @@ fn (mut encoder Encoder) encode_sumtype[T](val &T) {
 fn (mut encoder Encoder) encode_sumtype_option_payload[P](payload P) {
 	$if P.unaliased_typ is time.Time {
 		encoder.encode_sumtype_time_variant(time.Time(payload), 'Time')
+	} $else $if P is JsonEncoder && (P is StringDecoder || P is NumberDecoder || P is BooleanDecoder || P is NullDecoder) {
+		// Like a variant that is not an option, see `encode_sumtype`.
+		encoder.encode_value(payload)
 	} $else $if P.unaliased_typ is $struct {
 		encoder.encode_sumtype_struct_variant(payload, struct_variant_tag[P]())
 	} $else $if P is $array_dynamic {

@@ -1254,6 +1254,17 @@ fn (mut decoder Decoder) decode_value[T](mut val T) ! {
 		} $else $if T.unaliased_typ is $struct {
 			struct_info := decoder.current_value()
 
+			$if T is StringDecoder || T is NumberDecoder || T is BooleanDecoder || T is NullDecoder {
+				if decoder.strict {
+					// A struct whose fields are all skipped, like `decimal.Decimal`, has no
+					// object form: its scalar custom decoders above handled the kinds it
+					// accepts. Strict mode rejects the rest instead of decoding them as zero.
+					kinds := scalar_only_kinds[T]()
+					if kinds != '' {
+						decoder.decode_error('Expected ${kinds}, but got ${struct_info.value_kind}')!
+					}
+				}
+			}
 			if struct_info.value_kind == .object {
 				// Only a struct with an embedded struct needs its keys matched through its
 				// embeds too. Deciding that at compile time keeps the larger embed path out
@@ -2034,4 +2045,34 @@ fn (mut decoder Decoder) decode_number_from_string[T]() !T {
 	} $else {
 		return error('`decode_number_from_string` cannot decode ${T.name} type')
 	}
+}
+
+// scalar_only_kinds lists the JSON kinds, such as `string or number`, that `T` decodes
+// through its own scalar custom decoders when json2 skips every field of `T`. It returns
+// '' for a struct with a field that json2 decodes, or with no fields.
+fn scalar_only_kinds[T]() string {
+	mut field_count := 0
+	$for field in T.fields {
+		if field.is_embed || !struct_field_info(field.name, field.attrs).is_skip {
+			return ''
+		}
+		field_count++
+	}
+	if field_count == 0 {
+		return ''
+	}
+	mut kinds := []string{}
+	$if T is StringDecoder {
+		kinds << 'string'
+	}
+	$if T is NumberDecoder {
+		kinds << 'number'
+	}
+	$if T is BooleanDecoder {
+		kinds << 'boolean'
+	}
+	$if T is NullDecoder {
+		kinds << 'null'
+	}
+	return kinds.join(' or ')
 }

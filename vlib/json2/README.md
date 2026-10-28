@@ -25,10 +25,11 @@
 >
 > A type with its own `to_json()` method (or the deprecated `json_str()`), such as
 > `big.Integer`, is written by `json2.encode` through that method, while the old module
-> ignored it and wrote the type's fields. vfmt migrates these calls too, since it does
-> not resolve types, so check the output of such types after migrating. Decoding is not
-> affected: the `from_json_*` methods only handle a JSON string, number, boolean or
-> `null`, so objects written by the old module still decode field by field.
+> ignored it and wrote the type's fields, also as a sum type variant with a `_type`
+> field. vfmt migrates these calls too, since it does not resolve types, so check the
+> output of such types after migrating. Decoding is not affected outside strict mode:
+> the `from_json_*` methods only handle a JSON string, number, boolean or `null`, so
+> objects written by the old module still decode field by field.
 >
 > `json2.decode` also accepts an enum value given as the number of one of its members,
 > for an enum without `@[json_as_number]` too, as `json2.encode(x, enum_as_int: true)`
@@ -120,6 +121,9 @@ numbers have the usual floating-point precision limits.
 
 `strict: true` controls type conversion independently of `json5`: it still rejects
 quoted numbers, non-optional `null` values and fixed arrays of the wrong length.
+It also rejects the JSON kinds that a struct with scalar custom decoders does not
+handle: `big.Integer` accepts only numbers, while outside strict mode an object
+still decodes into its fields.
 `encode_append` and `decode_reuse` accept the same JSON5 options as `encode` and `decode`.
 JSON5 encoding releases temporary map keys. Decoded strings own their text, and decoding releases
 its UTF-8 scratch buffers.
