@@ -40,6 +40,16 @@ An exponent can have one leading `+` or `-` sign and any number of leading zeros
 Exponents must be between -100 and 100 inclusive. Larger magnitudes return an
 `exponent out of range` error rather than changing the value or allocating large powers of ten.
 
+`Decimal` implements the `json2` custom encoder and decoders. `json2.encode` writes
+a value as a JSON number in plain notation with its stored scale, so `10.50` stays
+`10.50`, also in arrays, maps and sum types. Consumers that read JSON numbers as
+binary floating point, such as JavaScript's `JSON.parse`, can round such values.
+`json2.decode` accepts a JSON number, or a JSON string with the syntax of a JSON
+number such as `"10.50"`, and keeps its scale. Other values return an error. Outside
+strict mode, json2 decodes a nested `null` or an object into a decimal as zero, as it
+does for structs; `strict: true` rejects both. Use a `?decimal.Decimal` field to tell
+a missing value apart from zero.
+
 ## Example
 
 ```v

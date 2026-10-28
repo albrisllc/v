@@ -19,8 +19,9 @@ pub const zero = Decimal{
 // Decimal represents an arbitrary-precision fixed-point decimal value.
 // Its numeric value is `coefficient * 10^-scale`.
 pub struct Decimal {
-	coefficient_value big.Integer
-	scale_value       int
+	// The fields are hidden from json2, so a JSON object cannot set them directly.
+	coefficient_value big.Integer @[json: '-']
+	scale_value       int         @[json: '-']
 }
 
 // RoundingMode selects how `round` and `div` treat the digits they discard.
