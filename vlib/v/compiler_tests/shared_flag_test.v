@@ -364,7 +364,8 @@ fn shared_flag_library_postfix() string {
 }
 
 fn shared_flag_cached_objects(obj_path string) []string {
-	cache_dir := os.join_path(os.vtmp_dir(), 'v3_thirdparty_objs')
+	// The driver keeps C objects under V3CACHE when it is set (v test sets it).
+	cache_dir := os.join_path(os.getenv_opt('V3CACHE') or { os.vtmp_dir() }, 'v3_thirdparty_objs')
 	if !os.exists(cache_dir) {
 		return []
 	}

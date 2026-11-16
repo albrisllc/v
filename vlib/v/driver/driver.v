@@ -17303,6 +17303,9 @@ fn v3_cache_artifact_roots() []string {
 
 fn v3_cache_artifact_directories() []string {
 	temp_root := os.real_path(os.abs_path(os.vtmp_dir()))
+	// The C object cache follows V3CACHE (v3_thirdparty_objs_dir), so its root
+	// holds it even when that root is not VTMP.
+	objects_root := os.real_path(os.abs_path(os.dir(v3_thirdparty_objs_dir())))
 	mut directories := []string{}
 	for raw_root in v3_cache_artifact_roots() {
 		root := os.real_path(os.abs_path(raw_root))
@@ -17310,7 +17313,8 @@ fn v3_cache_artifact_directories() []string {
 			continue
 		}
 		for name in os.ls(root) or { []string{} } {
-			if !v3_cache_artifact_dir_name(name, root == temp_root) {
+			if !v3_cache_artifact_dir_name(name, root == temp_root)
+				&& !(name == 'v3_thirdparty_objs' && root == objects_root) {
 				continue
 			}
 			candidate := os.join_path_single(root, name)
